@@ -1,0 +1,16 @@
+{
+  "name": "uniforge-explore",
+  "version": "0.1.0",
+  "description": "Read-only JS SDK for the Uniforge entity graph — zero dependencies, Node 18+",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "keywords": ["uniforge", "entity-graph", "data-exploration", "sdk"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Leeroo-AI/uniforge_sdk_js.git"
+  }
+}
