@@ -254,6 +254,45 @@ export class Explorer {
     }
     return rows;
   }
+
+  // --- resolve across links (CF entity resolution) + judge (LLM verdict) ---
+
+  // Resolve row(s) in fromTable to matching row(s) in toTable by TRAVERSING THE
+  // CF LINK (runs the discovered connectivity function, not a hand-written SQL
+  // join — works without a foreign key). `pks` is one pk (string) or many
+  // (array). Returns resolved target row(s) with match provenance.
+  async hop(fromTable, toTable, pks) {
+    const payload = { from_table: fromTable, to_table: toTable };
+    if (Array.isArray(pks)) payload.pks = pks; else payload.pk = pks;
+    const data = await this.#request("POST", "/ops/hop", { json: payload, fallbackCode: "HOP_FAILED" });
+    if (data && !Array.isArray(data)) return data.rows ?? data.results ?? [];
+    return data;
+  }
+
+  // Multi-PK alias of hop() (cross-system value lookup via the CF link).
+  async resolve(sourceTable, targetTable, sourcePks) {
+    return this.hop(sourceTable, targetTable, Array.from(sourcePks ?? []));
+  }
+
+  // Per-row LLM verdict over a candidate set, aligned by index:
+  // {is_finding, explanation, confidence}. The precision half of a detect()
+  // verify pass. Batched, temp 0 server-side. Costs an LLM call per batch.
+  async judge(rows, criteria, { model = "" } = {}) {
+    const payload = { rows, criteria };
+    if (model) payload.model = model;
+    const data = await this.#request("POST", "/ops/judge", { json: payload, fallbackCode: "JUDGE_FAILED" });
+    if (data && !Array.isArray(data)) return data.verdicts ?? data.rows ?? [];
+    return data;
+  }
+
+  // --- snake_case aliases ---------------------------------------------------
+  // The canonical verb names are snake_case (identical to the Python SDK) so an
+  // agent's detect()/remedy() reads the same in either language. camelCase
+  // methods above are kept as the JS-idiomatic spelling; these aliases make the
+  // two SDKs name-identical. (sql/search/neighbors/schema/sample/paths/hop/
+  // resolve/judge are already single-word and need no alias.)
+  async entity_graph() { return this.entityGraph(); }
+  async view_link(linkId) { return this.viewLink(linkId); }
 }
 
 export {
